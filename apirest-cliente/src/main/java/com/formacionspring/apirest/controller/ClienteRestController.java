@@ -58,6 +58,7 @@ public class ClienteRestController {
 	public void delete(@PathVariable Long id) {
 		servicio.borrar(id);
 	}*/
+	//esto lo hago pa divertirme pa divertirme
 	@DeleteMapping("/clientes/{id}")
 	public Cliente delete(@PathVariable Long id) {
 		Cliente clienteBorrado = servicio.mostrarPorId(id);

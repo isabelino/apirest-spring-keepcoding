@@ -1,6 +1,8 @@
 package com.formacionspring.apirest.controller;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -10,7 +12,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -135,6 +140,22 @@ public class ClienteRestController {
 			clienteUpdate.setTelefono(cliente.getTelefono());
 			clienteUpdate.setCreateAt(cliente.getCreateAt());
 			
+			if(cliente.getImagen()!=null) {
+				String nombreFotoAnterior = cliente.getImagen();
+				//verificamos que el cliente tenga registrado una imagen
+				if(nombreFotoAnterior != null && nombreFotoAnterior.length()>0) {
+					//preparamos la ruta a la imagen guardada
+					Path rutaFotoAnterior = Paths.get("uploads").resolve(nombreFotoAnterior).toAbsolutePath();
+					File archivoFotoAnterior = rutaFotoAnterior.toFile();
+					//verificamos que el archivo existe y se pueda leer
+					if(archivoFotoAnterior.exists() && archivoFotoAnterior.canRead()) {
+						//borramos la imagen
+						archivoFotoAnterior.delete();
+					}
+				}
+				clienteUpdate.setImagen(cliente.getImagen());
+			}
+			
 			//guardo y retorno los datos actualizados
 			servicio.guardar(clienteUpdate);
 			
@@ -175,6 +196,22 @@ public class ClienteRestController {
 		}
 		
 		try {
+			
+			if(clienteBorrado.getImagen()!=null) {
+				String nombreFotoAnterior = clienteBorrado.getImagen();
+				//verificamos que el cliente tenga registrado una imagen
+				if(nombreFotoAnterior != null && nombreFotoAnterior.length()>0) {
+					//preparamos la ruta a la imagen guardada
+					Path rutaFotoAnterior = Paths.get("uploads").resolve(nombreFotoAnterior).toAbsolutePath();
+					File archivoFotoAnterior = rutaFotoAnterior.toFile();
+					//verificamos que el archivo existe y se pueda leer
+					if(archivoFotoAnterior.exists() && archivoFotoAnterior.canRead()) {
+						//borramos la imagen
+						archivoFotoAnterior.delete();
+					}
+				}
+				
+			}
 			
 			servicio.borrar(id);
 			
@@ -217,6 +254,21 @@ public class ClienteRestController {
 				response.put("error", e.getMessage().concat(": ").concat(e.getCause().getMessage()));
 				return new ResponseEntity<Map<String,Object>>(response,HttpStatus.INTERNAL_SERVER_ERROR);
 			}
+			
+			
+			String nombreFotoAnterior = cliente.getImagen();
+			//verificamos que el cliente tenga registrado una imagen
+			if(nombreFotoAnterior != null && nombreFotoAnterior.length()>0) {
+				//preparamos la ruta a la imagen guardada
+				Path rutaFotoAnterior = Paths.get("uploads").resolve(nombreFotoAnterior).toAbsolutePath();
+				File archivoFotoAnterior = rutaFotoAnterior.toFile();
+				//verificamos que el archivo existe y se pueda leer
+				if(archivoFotoAnterior.exists() && archivoFotoAnterior.canRead()) {
+					//borramos la imagen
+					archivoFotoAnterior.delete();
+				}
+			}
+			
 		
 			//guardamos el nombre de la imagen
 			cliente.setImagen(nombreArchivo);
@@ -230,6 +282,36 @@ public class ClienteRestController {
 		
 	
 		return new ResponseEntity<Map<String,Object>>(response,HttpStatus.CREATED);
+	}
+	
+	
+	
+	@GetMapping("/uploads/img/{nombreImagen:.+}")
+	public ResponseEntity<Resource> verImagen(@PathVariable String nombreImagen){
+	
+		Path rutaArchivo = Paths.get("uploads").resolve(nombreImagen).toAbsolutePath();
+		
+		Resource recurso = null;
+		
+		try {
+			//codigo para acceder al archivo por url
+			recurso = new UrlResource(rutaArchivo.toUri());
+			
+		} catch (MalformedURLException e) {
+			
+			e.printStackTrace();
+		}
+		
+		if(!recurso.exists() && !recurso.isReadable()) {
+			throw new RuntimeException("no se puede cargar a la imagen: "+nombreImagen);
+		}
+		
+		HttpHeaders cabecera = new HttpHeaders();
+		cabecera.add(HttpHeaders.CONTENT_DISPOSITION,"attachment;filename=\""+recurso.getFilename()+"\"");
+		
+		
+		
+		return new ResponseEntity<Resource>(recurso,cabecera,HttpStatus.OK);
 	}
 	
 	

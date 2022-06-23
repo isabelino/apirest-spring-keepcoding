@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.formacionspring.apirest.entity.Cliente;
+import com.formacionspring.apirest.entity.Region;
 import com.formacionspring.apirest.service.ClienteService;
 
 @RestController
@@ -314,6 +315,10 @@ public class ClienteRestController {
 		return new ResponseEntity<Resource>(recurso,cabecera,HttpStatus.OK);
 	}
 	
-	
+	//metodo paraf mostrar todas la regiones
+	@GetMapping("/regiones")
+	public List<Region> showRegions(){
+		return servicio.mostrarRegiones();
+	}
 	
 }
